@@ -4,7 +4,7 @@
 <head>
   <script src="../jsPsych/jspsych.js"></script>
   <script src="../jsPsych/plugins/jspsych-serial-reaction-time-mouse.js"></script>
-  <script src="../jsPsych/plugins/jspsych-audio-keyboard-response.js"></script>
+  <script src="../jsPsych/plugins/jspsych-html-keyboard-response.js"></script>
   <link rel="stylesheet" href="../jsPsych/css/jspsych.css"></link>
 </head>
 
@@ -19,6 +19,11 @@
   ];
 
   // stimulus set up
+
+  var instructions_text = "<p> Instructions go here. Click the segment "
+            + "that matches what you hear as quickly as possible.</p> "
+            + "<p> Press any key to continue. </p>";
+
   var grid_0 = [
     [1,1,1],
     [1,1,1]
@@ -26,16 +31,23 @@
   var grid_content_0 = [
     ["te","rasu","mu"],
     ["hori", "ku", "ma"]
-  ]
+  ];
 
   var grid_1 = [
     [1,1,1,1,1],
     [1,1,1,1,1]
-  ]
+  ];
   var grid_content_1 = [
     ["te", "ra", "ku", "su", "mu"],
     ["hori", "ra", "ku", "ma", "su"]
-  ]
+  ];
+
+  // set up instructions
+  var instructions = {
+    type: 'html-keyboard-response',
+    stimulus: instructions_text,
+    post_trial_gap: 100
+  };
 
   // just hard code the trials for now.
   // set up trial 0
@@ -90,7 +102,7 @@
 
   // run jspsych
   jsPsych.init({
-    timeline: [trial_0_parameterized, trial_1_parameterized],
+    timeline: [instructions, trial_0_parameterized, instructions, trial_1_parameterized],
     preload_audio: audio,
     on_finish: function() {
       jsPsych.data.displayData();
