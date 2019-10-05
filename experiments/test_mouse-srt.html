@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="../jsPsych/jspsych.js"></script>
+  <script src="../jsPsych/plugins/jspsych-serial-reaction-time-mouse.js"></script>
+  <script src="../jsPsych/plugins/jspsych-audio-keyboard-response.js"></script>
+  <link rel="stylesheet" href="../jsPsych/css/jspsych.css"></link>
+</head>
+
+<body></body>
+
+<script>
+
+  // dummy audio for proof of concept
+  audio = [
+    'https://raw.githubusercontent.com/adamaji/jsPsych/master/examples/sound/speech_blue.mp3', 
+    'https://raw.githubusercontent.com/adamaji/jsPsych/master/examples/sound/speech_green.mp3'
+  ];
+
+  // stimulus set up
+  var grid_0 = [
+    [1,1,1],
+    [1,1,1]
+  ];
+  var grid_content_0 = [
+    ["te","rasu","mu"],
+    ["hori", "ku", "ma"]
+  ]
+
+  var grid_1 = [
+    [1,1,1,1,1],
+    [1,1,1,1,1]
+  ]
+  var grid_content_1 = [
+    ["te", "ra", "ku", "su", "mu"],
+    ["hori", "ra", "ku", "ma", "su"]
+  ]
+
+  // just hard code the trials for now.
+  // set up trial 0
+  var trial_0 = {
+    type: 'serial-reaction-time-mouse',
+    grid: grid_0,
+    grid_content: grid_content_0,
+    target: jsPsych.timelineVariable('target'),
+    audio_prompt: jsPsych.timelineVariable('audio_prompt'),
+  };
+
+
+  var trial_0_variables = [
+    {target: [1,0], audio_prompt: audio[0]},
+    {target: [1,1], audio_prompt: audio[1]},
+    {target: [0,2], audio_prompt: audio[0]},
+  ];
+
+  var trial_0_parameterized = {
+    timeline: [
+      trial_0
+    ],
+    timeline_variables: trial_0_variables,
+    randomize_order: false,
+  };
+
+  
+  // set up trial 1
+  var trial_1 = {
+    type: 'serial-reaction-time-mouse',
+    grid: grid_1,
+    grid_content: grid_content_1,
+    target: jsPsych.timelineVariable('target'),
+    audio_prompt: jsPsych.timelineVariable('audio_prompt'),
+  };
+
+  var trial_1_variables = [
+    {target: [1,0], audio_prompt: audio[0]},
+    {target: [1,1], audio_prompt: audio[1]},
+    {target: [0,2], audio_prompt: audio[0]},
+    {target: [0,3], audio_prompt: audio[1]},
+    {target: [1,4], audio_prompt: audio[0]},
+  ];
+
+  var trial_1_parameterized = {
+    timeline: [
+      trial_1
+    ],
+    timeline_variables: trial_1_variables,
+    randomize_order: false,
+  };
+
+  // run jspsych
+  jsPsych.init({
+    timeline: [trial_0_parameterized, trial_1_parameterized],
+    preload_audio: audio,
+    on_finish: function() {
+      jsPsych.data.displayData();
+    },
+    default_iti: 0
+  });
+</script>
+
+</html>
+
