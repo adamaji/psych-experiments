@@ -13,96 +13,181 @@
 <script>
 
   // dummy audio for proof of concept
+  // indexed like [mono/bi][word instance][word/mp3]
+  // i know this is silly but will change once
+  // we have the true experiment schema
+  word_to_audio_bank = [
+    [
+    ["dak", "assets/sound/bank_a/dak.mp3"],
+    ["jic", "assets/sound/bank_a/jic.mp3"],
+    ["pel", "assets/sound/bank_a/pel.mp3"],
+    ["rud", "assets/sound/bank_a/rud.mp3"],
+    ["tood", "assets/sound/bank_a/tood.mp3"],
+    ["vot", "assets/sound/bank_a/vot.mp3"]
+    ],
+    [
+    ["coomo", "assets/sound/bank_b/coomo.mp3"],
+    ["fengle", "assets/sound/bank_b/fengle.mp3"],
+    ["gople", "assets/sound/bank_b/gople.mp3"],
+    ["kicey", "assets/sound/bank_b/kicey.mp3"],
+    ["loga", "assets/sound/bank_b/loga.mp3"],
+    ["puser", "assets/sound/bank_b/puser.mp3"],
+    ["wadim", "assets/sound/bank_b/wadim.mp3"]
+    ]
+  ]
+
   audio = [
-    'https://raw.githubusercontent.com/adamaji/jsPsych/master/examples/sound/speech_blue.mp3', 
-    'https://raw.githubusercontent.com/adamaji/jsPsych/master/examples/sound/speech_green.mp3'
-  ];
+    "assets/sound/bank_a/dak.mp3",
+    "assets/sound/bank_a/jic.mp3",
+    "assets/sound/bank_a/pel.mp3",
+    "assets/sound/bank_a/rud.mp3",
+    "assets/sound/bank_a/tood.mp3",
+    "assets/sound/bank_a/vot.mp3",
+    "assets/sound/bank_b/coomo.mp3",
+    "assets/sound/bank_b/fengle.mp3",
+    "assets/sound/bank_b/gople.mp3",
+    "assets/sound/bank_b/kicey.mp3",
+    "assets/sound/bank_b/loga.mp3",
+    "assets/sound/bank_b/puser.mp3",
+    "assets/sound/bank_b/wadim.mp3"
+  ]
 
-  // stimulus set up
+  var choose_word_and_foil = function(bank) {
+    true_idx = Math.floor(Math.random() * (bank.length - 1));
+    foil_idx = Math.floor(Math.random() * (bank.length - 2));
+    if (foil_idx == true_idx) {foil_idx += 1;}
+    return [true_idx, foil_idx];
+  }
 
+  var create_grid = function() {
+    var true_idx = [];
+    var foil_idx = [];
+    var temp;
+    for (var i=0; i < 3; i+=1) {
+      temp = choose_word_and_foil(word_to_audio_bank[i % 2]);
+      true_idx.push(temp[0]);
+      foil_idx.push(temp[1]);
+    }
+    
+    // assuming only two rows
+    var grid_content = [];
+    var row_a = [];
+    var row_b = [];
+    var target_idx = [];
+    for (var i=0; i < 3; i+=1) {
+      bank = word_to_audio_bank[i % 2];
+      if (Math.random() > 0.5) {
+        row_a.push(bank[true_idx[i]][0]);
+        row_b.push(bank[foil_idx[i]][0]);
+        target_idx.push(0);
+      }
+      else {
+        row_a.push(bank[foil_idx[i]][0]);
+        row_b.push(bank[true_idx[i]][0]);
+        target_idx.push(1);
+      }
+    }
+    grid_content.push(row_a);
+    grid_content.push(row_b);
+
+    return [grid_content, target_idx, true_idx];
+  }
+
+  var create_trial_variables = function(target_idx, true_idx) {
+    var trial_var = [];
+    var sequence_length = 3;
+    for (var i=0; i<sequence_length; i+=1) {
+
+      trial_var.push({
+        target: [target_idx[i], i],
+        audio_prompt: word_to_audio_bank[i % 2][true_idx[i]][1],
+        post_trial_gap: i==sequence_length-1 ? 750 : 0
+      });
+
+    } 
+    return trial_var;  
+  }
+
+  var create_trial_run = function() {
+
+    var grid_layout = [
+      [1,1,1],
+      [1,1,1]
+    ];
+
+    var created_grid = create_grid();
+    var grid_content_0 = created_grid[0];
+    var target_idx_0 = created_grid[1];
+    var true_idx_0 = created_grid[2];
+
+    var trial_0_vars = create_trial_variables(target_idx_0, true_idx_0);
+
+    // initial 250ms display trial
+    var pre_trial_0 = {
+      type: 'serial-reaction-time-mouse',
+      grid: grid_layout,
+      grid_content: grid_content_0,
+      target: [0,0],
+      target_color: '#fff',
+      trial_duration: 250,
+      on_load: squish_grid,
+      data: {test_segment: 'familiarization'}
+    }
+
+    // then click trials
+    var trial_0 = {
+      type: 'serial-reaction-time-mouse',
+      grid: grid_layout,
+      grid_content: grid_content_0,
+      target: jsPsych.timelineVariable('target'),
+      target_color: '#fff',
+      audio_prompt: jsPsych.timelineVariable('audio_prompt'),
+      post_trial_gap: jsPsych.timelineVariable('post_trial_gap'),
+      on_load: squish_grid,
+      data: {test_segment: 'response'}
+    };
+
+    var trial_0_parameterized = {
+      timeline: [
+        trial_0
+      ],
+      timeline_variables: trial_0_vars,
+      randomize_order: false,
+    };
+
+    return [pre_trial_0, trial_0_parameterized];
+  }
+
+  var squish_grid = function() {
+    console.log("Squishing grid");
+    els = document.getElementsByClassName("jspsych-serial-reaction-time-stimulus-cell");
+    for (var i=0; i<els.length; i+=1) {
+      els[i].style['margin-left'] = 0;
+    }
+    el = document.getElementById("jspsych-serial-reaction-time-stimulus");
+    el.style['border-spacing'] = 0;
+  }
+
+  // set up instructions
   var instructions_text = "<p> Instructions go here. Click the segment "
             + "that matches what you hear as quickly as possible.</p> "
             + "<p> Press any key to continue. </p>";
-
-  var grid_0 = [
-    [1,1,1],
-    [1,1,1]
-  ];
-  var grid_content_0 = [
-    ["te","rasu","mu"],
-    ["hori", "ku", "ma"]
-  ];
-
-  var grid_1 = [
-    [1,1,1,1,1],
-    [1,1,1,1,1]
-  ];
-  var grid_content_1 = [
-    ["te", "ra", "ku", "su", "mu"],
-    ["hori", "ra", "ku", "ma", "su"]
-  ];
-
-  // set up instructions
   var instructions = {
     type: 'html-keyboard-response',
     stimulus: instructions_text,
-    post_trial_gap: 100
+    post_trial_gap: 750
   };
 
-  // just hard code the trials for now.
-  // set up trial 0
-  var trial_0 = {
-    type: 'serial-reaction-time-mouse',
-    grid: grid_0,
-    grid_content: grid_content_0,
-    target: jsPsych.timelineVariable('target'),
-    audio_prompt: jsPsych.timelineVariable('audio_prompt'),
-  };
+  var timeline = [];
+  timeline.push(instructions);
 
-
-  var trial_0_variables = [
-    {target: [1,0], audio_prompt: audio[0]},
-    {target: [1,1], audio_prompt: audio[1]},
-    {target: [0,2], audio_prompt: audio[0]},
-  ];
-
-  var trial_0_parameterized = {
-    timeline: [
-      trial_0
-    ],
-    timeline_variables: trial_0_variables,
-    randomize_order: false,
-  };
-
-  
-  // set up trial 1
-  var trial_1 = {
-    type: 'serial-reaction-time-mouse',
-    grid: grid_1,
-    grid_content: grid_content_1,
-    target: jsPsych.timelineVariable('target'),
-    audio_prompt: jsPsych.timelineVariable('audio_prompt'),
-  };
-
-  var trial_1_variables = [
-    {target: [1,0], audio_prompt: audio[0]},
-    {target: [1,1], audio_prompt: audio[1]},
-    {target: [0,2], audio_prompt: audio[0]},
-    {target: [0,3], audio_prompt: audio[1]},
-    {target: [1,4], audio_prompt: audio[0]},
-  ];
-
-  var trial_1_parameterized = {
-    timeline: [
-      trial_1
-    ],
-    timeline_variables: trial_1_variables,
-    randomize_order: false,
-  };
+  for (var i=0; i<3; i+=1) {
+    timeline = timeline.concat(create_trial_run());
+  }
 
   // run jspsych
   jsPsych.init({
-    timeline: [instructions, trial_0_parameterized, instructions, trial_1_parameterized],
+    timeline: timeline,
     preload_audio: audio,
     on_finish: function() {
       jsPsych.data.displayData();
